@@ -1,0 +1,64 @@
+// PROGRAMA DE CONTROLE DE LINHA DE PRODUÇÃO - VERSÃO 1.0
+// Data: 02/2025
+// Autor: Seu Nome
+// Descrição: Controle básico de esteira transportadora com sensor de presença
+
+// DEFINIÇÃO DE VARIÁVEIS
+VAR
+    // Entradas digitais
+    sensor_inicio : BOOL;    // Sensor de presença no início da esteira
+    sensor_fim : BOOL;       // Sensor de presença no fim da esteira
+    botao_start : BOOL;      // Botão de início de operação
+    botao_stop : BOOL;       // Botão de parada
+    parada_emergencia : BOOL; // Botão de parada de emergência
+    
+    // Saídas digitais
+    motor_esteira : BOOL;    // Motor da esteira transportadora
+    luz_verde : BOOL;        // Luz indicadora de operação normal
+    luz_vermelha : BOOL;     // Luz indicadora de parada
+    
+    // Variáveis internas
+    contador_pecas : INT;    // Contador de peças processadas
+    sistema_ligado : BOOL;   // Estado do sistema
+	sensor_fim_anterior : BOOL;
+END_VAR	
+
+// LÓGICA PRINCIPAL
+
+// Verificação de parada de emergência (lógica invertida - NC)
+IF NOT parada_emergencia THEN
+    sistema_ligado := FALSE;
+    luz_vermelha := TRUE;
+    luz_verde := FALSE;
+    motor_esteira := FALSE;
+ELSE
+    // Lógica de partida com borda de subida
+    IF botao_start AND NOT botao_start_anterior THEN
+        sistema_ligado := TRUE;
+    END_IF;
+    
+    // Lógica de parada
+    IF botao_stop THEN
+        sistema_ligado := FALSE;
+    END_IF;
+END_IF;
+
+// Controle da esteira e sinalizações
+IF sistema_ligado THEN
+    motor_esteira := TRUE;
+    luz_verde := TRUE;
+    luz_vermelha := FALSE;
+ELSE
+    motor_esteira := FALSE;
+    luz_verde := FALSE;
+    luz_vermelha := TRUE;
+END_IF;
+
+// Contagem de peças (borda de subida)
+IF sensor_fim AND NOT sensor_fim_anterior THEN
+    contador_pecas := contador_pecas + 1;
+END_IF;
+
+// Atualiza estado anterior do sensor e botão start
+sensor_fim_anterior := sensor_fim;
+botao_start_anterior := botao_start;
