@@ -1,7 +1,8 @@
-// PROGRAMA DE CONTROLE DE LINHA DE PRODUÇÃO - VERSÃO 1.0
+// PROGRAMA DE CONTROLE DE LINHA DE PRODUÇÃO - VERSÃO 1.1
 // Data: 02/2025
 // Autor: Seu Nome
 // Descrição: Controle básico de esteira transportadora com sensor de presença
+// Alterações: Adicionado sensor de temperatura, sensor do meio e novos avisos
 
 // DEFINIÇÃO DE VARIÁVEIS
 VAR
@@ -11,17 +12,31 @@ VAR
     botao_start : BOOL;      // Botão de início de operação
     botao_stop : BOOL;       // Botão de parada
     parada_emergencia : BOOL; // Botão de parada de emergência
-    
+
+    // Novas entradas adicionadas na manutenção
+    sensor_temperatura : REAL;    // Sensor de temperatura do motor
+    sensor_meio : BOOL;           // Sensor no meio da esteira
+
     // Saídas digitais
     motor_esteira : BOOL;    // Motor da esteira transportadora
     luz_verde : BOOL;        // Luz indicadora de operação normal
     luz_vermelha : BOOL;     // Luz indicadora de parada
-    
+
+    // Novas saídas adicionadas na manutenção
+    luz_amarela : BOOL;      // Luz de alerta
+    alarme : BOOL;           // Alarme sonoro
+
     // Variáveis internas
     contador_pecas : INT;    // Contador de peças processadas
     sistema_ligado : BOOL;   // Estado do sistema
-	sensor_fim_anterior : BOOL;
-END_VAR	
+    sensor_fim_anterior : BOOL := FALSE;  // Inicializado corretamente
+     botao_start_anterior : BOOL := FALSE; // Inicializado corretamente
+ 
+    // Novas variáveis adicionadas na manutenção
+    sensor_meio_anterior : BOOL; // Estado anterior do sensor do meio
+
+
+END_VAR  
 
 // LÓGICA PRINCIPAL
 
@@ -30,17 +45,36 @@ IF NOT parada_emergencia THEN
     sistema_ligado := FALSE;
     luz_vermelha := TRUE;
     luz_verde := FALSE;
+    luz_amarela := FALSE;
     motor_esteira := FALSE;
+    alarme := TRUE;
 ELSE
-    // Lógica de partida com borda de subida
-    IF botao_start AND NOT botao_start_anterior THEN
-        sistema_ligado := TRUE;
-    END_IF;
+    alarme := FALSE; // Alarme desliga ao liberar a emergência
+END_IF;
+
+// Monitoramento de temperatura (adicionado na manutenção)
+IF sensor_temperatura > 80.0 THEN
+    luz_amarela := TRUE;
     
-    // Lógica de parada
-    IF botao_stop THEN
+    // Se temperatura crítica, ativar alarme e parar esteira
+    IF sensor_temperatura > 95.0 THEN
+        alarme := TRUE;
         sistema_ligado := FALSE;
+        motor_esteira := FALSE;
+        luz_verde := FALSE;
+        luz_vermelha := TRUE;
     END_IF;
+ELSE
+    luz_amarela := FALSE;
+END_IF;
+
+// Lógica de partida e parada
+IF botao_start AND NOT botao_start_anterior THEN
+    sistema_ligado := TRUE;
+END_IF;
+
+IF botao_stop THEN
+    sistema_ligado := FALSE;
 END_IF;
 
 // Controle da esteira e sinalizações
@@ -59,6 +93,13 @@ IF sensor_fim AND NOT sensor_fim_anterior THEN
     contador_pecas := contador_pecas + 1;
 END_IF;
 
-// Atualiza estado anterior do sensor e botão start
+// Lógica para o sensor do meio (adicionado na manutenção)
+IF sensor_meio AND NOT sensor_meio_anterior THEN
+    // Registra passagem pelo meio da esteira
+    // Futuras expansões poderiam usar este ponto para desvios
+END_IF;
+
+// Atualiza estados anteriores
 sensor_fim_anterior := sensor_fim;
+sensor_meio_anterior := sensor_meio;
 botao_start_anterior := botao_start;
